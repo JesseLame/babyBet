@@ -15,6 +15,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
+    <script src="config.js"></script>
     <script defer src="script.js"></script>
   </head>
   <body>
@@ -31,8 +32,8 @@
           <h1>Keep one clean record of the birth day and name wager.</h1>
           <p class="lede">
             Track your guess, compare it against the actual arrival, and keep
-            every note in the browser so the site stays free to host on
-            GitHub Pages.
+            every note optionally synced through a tiny shared backend while
+            the site stays free to host on GitHub Pages.
           </p>
         </div>
 
@@ -40,6 +41,7 @@
           <div class="status-pill" id="statusPill">Waiting for your predictions</div>
           <div class="big-number" id="countdownValue">--</div>
           <p class="muted" id="countdownLabel">Set a predicted date to start the countdown.</p>
+          <p class="sync-status" id="syncStatus">Open an invite link to join the shared board.</p>
         </div>
       </section>
 
@@ -161,8 +163,8 @@
 
       <section class="card footer-card">
         <p>
-          Everything stays in your browser unless you choose to publish it. Perfect for a free
-          GitHub Pages site.
+          Everything is cached in your browser, and when Supabase is configured the same board is
+          shared across the invite link. Perfect for a free GitHub Pages site.
         </p>
         <button class="ghost" id="copySummary" type="button">Copy summary</button>
       </section>

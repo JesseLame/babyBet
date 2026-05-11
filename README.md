@@ -6,32 +6,47 @@ A simple static website for tracking a bet on a child's birth date and name.
 
 - Tracks a predicted birth date and predicted name
 - Lets you log the actual birth date and actual name later
-- Stores everything in the browser with `localStorage`
-- Works as a free GitHub Pages site with no backend
+- Caches everything in the browser with `localStorage`
+- Can sync the same board across browsers when Supabase is configured
+- Works as a free GitHub Pages site with no backend required for local use
+
+## Shared storage
+
+To share the same data across devices, connect the page to Supabase:
+
+1. Create a Supabase project.
+2. Run the schema in [`supabase-schema.sql`](supabase-schema.sql).
+3. In GitHub, add repository secrets named `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`.
+4. In repository settings, switch GitHub Pages to deploy from GitHub Actions.
+5. Push to the `main` branch and let the workflow generate `config.js` during deployment.
+6. Share an invite link that includes a board key, for example `https://your-site.github.io/#board=your-private-board-key`.
+
+The board key is the shared secret for that invite link. Anyone with the link can use the board, so keep it private.
+The Supabase publishable key is safe to expose to the browser, but it should still be stored as a GitHub secret so it does not live in the repository. Never use a `service_role` or `sb_secret` key in this app.
+
+## GitHub Pages deploy
+
+This repo includes a GitHub Actions workflow in [`.github/workflows/deploy-pages.yml`](.github/workflows/deploy-pages.yml).
+
+- The checked-in [`config.js`](config.js) keeps local development working without secrets.
+- During deployment, the workflow replaces that file in the Pages artifact with values from GitHub Secrets.
+- The deployed site reads the generated file before `script.js` starts, so Supabase sync is enabled automatically when the secrets exist.
 
 ## Run locally
 
 Open `index.html` in a browser, or serve the folder with any static server.
 
+If Supabase is not configured, the app stays in local-only mode and still works as a single-device tracker.
+
 ## Publish on GitHub Pages
 
-### Option 1: user site
-
-1. Create a repository named `your-username.github.io`.
-2. Push these files to the repository root.
-3. In GitHub, go to `Settings` -> `Pages`.
-4. Select the `main` branch and `/root`.
-5. Save, then wait for the site to deploy.
-
-### Option 2: project site
-
-1. Create any repository name you want.
-2. Push these files to the repository root.
-3. In GitHub, go to `Settings` -> `Pages`.
-4. Select the `main` branch and `/root`.
-5. Your site will be published at the Pages URL shown by GitHub.
+1. Push the repo to GitHub.
+2. Add `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` as repository secrets.
+3. In `Settings` -> `Pages`, set the source to `GitHub Actions`.
+4. Push to `main` or run the workflow manually.
+5. Open the Pages URL shown by GitHub once deployment finishes.
 
 ## Notes
 
 - The design is intentionally lightweight so it stays easy to maintain.
-- If you want, the next upgrade can add a results table, a countdown timer, or a nicer share card.
+- If you want, the next upgrade can add login-based access control, a results table, or a nicer share card.

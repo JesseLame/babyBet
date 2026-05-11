@@ -187,6 +187,29 @@ h2 {
   line-height: 1.6;
 }
 
+.sync-status {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.sync-status[data-tone="synced"] {
+  color: #9cf0ca;
+}
+
+.sync-status[data-tone="saving"] {
+  color: #ffd58a;
+}
+
+.sync-status[data-tone="offline"] {
+  color: var(--danger);
+}
+
+.sync-status[data-tone="connecting"] {
+  color: var(--accent-2);
+}
+
 .stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -373,6 +396,11 @@ dd {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.timeline-empty {
+  color: var(--muted);
+  border-style: dashed;
 }
 
 .timeline time {
