@@ -31,6 +31,7 @@ jobs:
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           BOARD_KEY: ${{ secrets.BOARD_KEY }}
         run: |
+          node -e "const missing=['SUPABASE_URL','SUPABASE_PUBLISHABLE_KEY','BOARD_KEY'].filter((name) => !process.env[name]); if (missing.length) { console.error('Missing required Pages secrets: ' + missing.join(', ')); process.exit(1); } console.log('Pages secrets found: SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, BOARD_KEY');"
           rm -rf dist
           mkdir -p dist
           cp index.html script.js styles.css config.js dist/
