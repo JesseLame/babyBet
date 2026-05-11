@@ -1,8 +1,5 @@
 const APP_KEY = "baby-bet-board";
-const APP_VERSION = "v3";
-const LEGACY_APP_VERSION = "v2";
 const REMOTE_POLL_MS = 15000;
-const SAVE_DEBOUNCE_MS = 650;
 const env = import.meta.env ?? {};
 const SHARED_REMOTE_SCOPE = "";
 
@@ -14,8 +11,6 @@ const appConfig = normalizeConfig(
     betsTable: "baby_bet_bets",
   }
 );
-const storageKey = `${APP_KEY}:${APP_VERSION}`;
-const legacyStorageKey = `${APP_KEY}:${LEGACY_APP_VERSION}`;
 const remoteConfig =
   appConfig.supabaseUrl && appConfig.supabasePublishableKey
     ? {
@@ -26,12 +21,10 @@ const remoteConfig =
       }
     : null;
 
-const state = loadState();
+const state = createDefaultState();
 
 const runtime = {
-  saveTimer: null,
   remoteSyncInFlight: 0,
-  lastRemoteSignature: "",
   pollTimer: null,
 };
 
@@ -138,12 +131,6 @@ function handleCreateSubmit() {
     guessTime,
   });
 
-  state.bets = [bet, ...state.bets.filter((entry) => entry.id !== bet.id)];
-  saveState();
-  render();
-
-  els.createForm.reset();
-  toggleCreatePanel(false);
   void syncBetNow(bet);
 }
 
@@ -170,19 +157,21 @@ function toggleCreatePanel(forceOpen) {
 }
 
 function setInitialStatus() {
-  if (remoteConfig) return;
-  if (state.bets.length > 0) {
-    setSyncStatus("Saved locally on this device.", "synced");
+  if (remoteConfig) {
     return;
   }
 
-  setSyncStatus("Create the first bet to start the list.", "local");
+  if (state.bets.length > 0) {
+    setSyncStatus("Connect Supabase to load the shared list.", "offline");
+    return;
+  }
+
+  setSyncStatus("Connect Supabase to load the shared list.", "offline");
 }
 
 function render() {
   renderHeader();
   renderBets();
-  saveState();
 }
 
 function renderHeader() {
@@ -264,41 +253,6 @@ function createDefaultState() {
   return {
     bets: [],
   };
-}
-
-function loadState() {
-  const current = readStateFromKey(storageKey);
-  if (current && current.bets.length > 0) {
-    return current;
-  }
-
-  const legacy = readStateFromKey(legacyStorageKey);
-  if (legacy && legacy.bets.length > 0) {
-    safeSetItem(storageKey, JSON.stringify(legacy));
-    return legacy;
-  }
-
-  const migrated = readAnyNamespacedState(APP_VERSION) || readAnyNamespacedState(LEGACY_APP_VERSION);
-  if (migrated && migrated.bets.length > 0) {
-    safeSetItem(storageKey, JSON.stringify(migrated));
-    return migrated;
-  }
-
-  return current || legacy || createDefaultState();
-}
-
-function readStateFromKey(key) {
-  try {
-    const raw = safeGetItem(key);
-    if (!raw) return null;
-    return normalizeState(JSON.parse(raw));
-  } catch {
-    return null;
-  }
-}
-
-function saveState() {
-  safeSetItem(storageKey, JSON.stringify(normalizeState(state)));
 }
 
 function normalizeState(raw) {
@@ -397,29 +351,15 @@ async function hydrateFromBackend() {
   try {
     const snapshot = await loadRemoteSnapshot();
     const remoteBets = normalizeBets(snapshot.bets);
-    const merged = mergeBets(state.bets, remoteBets);
-    const mergedSignature = betsSignature(merged);
-    const localSignature = betsSignature(state.bets);
-
-    if (mergedSignature !== localSignature) {
-      state.bets = merged;
-      saveState();
-      render();
-    }
-
-    runtime.lastRemoteSignature = betsSignature(remoteBets);
+    state.bets = mergeBets(state.bets, remoteBets);
+    render();
 
     if (snapshot.board && remoteBets.length === 0) {
       const legacy = normalizeLegacyBet(snapshot.board);
       if (hasMeaningfulBetData(legacy)) {
-        const afterLegacy = mergeBets(state.bets, [legacy]);
-        if (betsSignature(afterLegacy) !== betsSignature(state.bets)) {
-          state.bets = afterLegacy;
-          saveState();
-          render();
-        }
+        state.bets = mergeBets(state.bets, [legacy]);
+        render();
         await seedRemoteBetsFromLocal([legacy]);
-        runtime.lastRemoteSignature = "";
         setSyncStatus("Legacy board migrated into the list.", "synced");
         return;
       }
@@ -435,7 +375,7 @@ async function hydrateFromBackend() {
     setSyncStatus(remoteBets.length > 0 ? "Shared list synced" : "Shared list ready", "synced");
   } catch (error) {
     console.warn("Shared sync unavailable", error, debugInfo);
-    setSyncStatus("Local list only for now.", "offline");
+    setSyncStatus("Shared list unavailable right now.", "offline");
   } finally {
     endRemoteSync();
   }
@@ -443,31 +383,20 @@ async function hydrateFromBackend() {
 
 async function refreshFromBackend() {
   if (!remoteConfig) return;
-  if (runtime.saveTimer || isRemoteBusy()) return;
+  if (isRemoteBusy()) return;
 
   beginRemoteSync();
   try {
     const snapshot = await loadRemoteSnapshot();
     const remoteBets = normalizeBets(snapshot.bets);
-    const remoteSignature = betsSignature(remoteBets);
-    const merged = mergeBets(state.bets, remoteBets);
-    const mergedSignature = betsSignature(merged);
-    const localSignature = betsSignature(state.bets);
-
-    if (mergedSignature !== localSignature) {
-      state.bets = merged;
-      saveState();
-      render();
-      setSyncStatus("Shared list updated", "synced");
-    }
+    state.bets = mergeBets(state.bets, remoteBets);
+    render();
 
     const localOnly = findLocalOnlyBets(state.bets, remoteBets);
     if (localOnly.length > 0) {
       await seedRemoteBetsFromLocal(localOnly);
       setSyncStatus("Shared list synced", "synced");
     }
-
-    runtime.lastRemoteSignature = remoteSignature;
   } catch {
     setSyncStatus("Shared list unavailable right now.", "offline");
   } finally {
@@ -509,8 +438,8 @@ async function seedRemoteBetsFromLocal(bets) {
 
 async function syncBetNow(bet) {
   if (!remoteConfig) {
-    console.info("[Baby Bets] local-only save", debugInfo.reason);
-    setSyncStatus("Saved locally on this device.", "synced");
+    console.info("[Baby Bets] remote sync disabled", debugInfo.reason);
+    setSyncStatus("Connect Supabase to save bets.", "offline");
     return;
   }
 
@@ -523,11 +452,14 @@ async function syncBetNow(bet) {
       table: remoteConfig.betsTable,
     });
     await upsertRemoteBet(bet);
-    runtime.lastRemoteSignature = "";
+    state.bets = [bet, ...state.bets.filter((entry) => entry.id !== bet.id)];
+    render();
+    els.createForm.reset();
+    toggleCreatePanel(false);
     setSyncStatus("Shared list synced", "synced");
   } catch (error) {
     console.warn("Bet sync failed", error);
-    setSyncStatus("Saved locally. Will retry when the connection is back.", "offline");
+    setSyncStatus("Could not save to the shared list.", "offline");
   } finally {
     endRemoteSync();
   }
@@ -697,43 +629,6 @@ function normalizeConfig(raw) {
     boardTable: toText(source.boardTable).trim() || "baby_bet_board",
     betsTable: toText(source.betsTable).trim() || "baby_bet_bets",
   };
-}
-
-function readAnyNamespacedState(version) {
-  const prefix = `${APP_KEY}:${version}:`;
-
-  try {
-    for (let index = 0; index < window.localStorage.length; index += 1) {
-      const key = window.localStorage.key(index);
-      if (!key || !key.startsWith(prefix)) continue;
-      if (key === storageKey || key === legacyStorageKey) continue;
-
-      const state = readStateFromKey(key);
-      if (state && state.bets.length > 0) {
-        return state;
-      }
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
-}
-
-function safeGetItem(key) {
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function safeSetItem(key, value) {
-  try {
-    window.localStorage.setItem(key, value);
-  } catch {
-    // Ignore storage failures and keep the app functional.
-  }
 }
 
 function toText(value) {

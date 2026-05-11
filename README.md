@@ -6,7 +6,6 @@ A simple static website for tracking a compact list of bets on a child's birth d
 
 - Tracks a list of bets with predicted date, predicted name, who made the guess, and time
 - Keeps the layout compact with a small create button and list-first view
-- Caches everything in the browser with `localStorage`
 - Can sync the same list across browsers when Supabase is configured
 - Runs as a Vite app that can be deployed to Vercel with build-time environment variables
 
@@ -42,7 +41,7 @@ You can also run a production build locally with:
 npm run build
 ```
 
-If Supabase is not configured, the app stays in local-only mode and still works as a single-device tracker.
+If Supabase is not configured, the app can still render the interface, but it will not be able to load or save bets.
 
 ## Deploy on Vercel
 
