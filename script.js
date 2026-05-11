@@ -95,6 +95,12 @@ function bindActions() {
   });
 
   els.betsList.addEventListener("click", (event) => {
+    const deleteButton = event.target.closest("[data-action='delete-bet']");
+    if (deleteButton) {
+      void handleDeleteBet(deleteButton.dataset.betId);
+      return;
+    }
+
     const button = event.target.closest("[data-action='open-create']");
     if (button) {
       toggleCreatePanel(true);
@@ -366,7 +372,7 @@ function renderEmptyState() {
   tr.className = "empty-state-row";
 
   const td = document.createElement("td");
-  td.colSpan = 4;
+  td.colSpan = 5;
   td.className = "empty-state-cell";
 
   const wrap = document.createElement("div");
@@ -403,10 +409,41 @@ function renderBetRow(bet, isLeader = false) {
     createCell(bet.predictedName || "Untitled bet", "Baby name", "bet-name-cell"),
     createCell(formatDate(bet.predictedDate) || "—", "Predicted date", "bet-muted-cell"),
     createCell(bet.guessedBy || "—", "Guessed by", "bet-muted-cell"),
-    createCell(bet.guessTime || "—", "Time", "bet-muted-cell")
+    createCell(bet.guessTime || "—", "Time", "bet-muted-cell"),
+    createActionCell(bet)
   );
 
   return tr;
+}
+
+function createActionCell(bet) {
+  const td = document.createElement("td");
+  td.className = "bet-actions-cell";
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "secondary row-action-button";
+  button.dataset.action = "delete-bet";
+  button.dataset.betId = bet.id;
+  button.setAttribute(
+    "aria-label",
+    `Delete bet for ${bet.predictedName || "untitled bet"}`
+  );
+  button.innerHTML = `
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+      fill="currentColor"
+    >
+      <path
+        d="M9 3h6a1 1 0 0 1 1 1v1h4v2H4V5h4V4a1 1 0 0 1 1-1Zm1 6h2v7h-2V9Zm4 0h2v7h-2V9ZM6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12H6Z"
+      />
+    </svg>
+  `;
+
+  td.append(button);
+  return td;
 }
 
 function createCell(text, label, className) {
@@ -591,6 +628,43 @@ async function syncBetNow(bet) {
   }
 }
 
+async function handleDeleteBet(betId) {
+  if (!betId) return;
+
+  const bet = state.bets.find((entry) => entry.id === betId);
+  if (!bet) return;
+
+  const label = bet.predictedName || "this bet";
+  const confirmed = window.confirm(`Delete ${label}? This cannot be undone.`);
+  if (!confirmed) return;
+
+  if (!remoteConfig) {
+    state.bets = state.bets.filter((entry) => entry.id !== betId);
+    render();
+    setSyncStatus("Removed locally.", "offline");
+    return;
+  }
+
+  beginRemoteSync();
+  try {
+    setSyncStatus("Deleting bet...", "saving");
+    console.info("[Baby Bets] deleting bet", {
+      betId,
+      supabaseUrl: remoteConfig.supabaseUrl,
+      table: remoteConfig.betsTable,
+    });
+    await deleteRemoteBet(betId);
+    state.bets = state.bets.filter((entry) => entry.id !== betId);
+    render();
+    setSyncStatus("Shared list synced", "synced");
+  } catch (error) {
+    console.warn("Bet delete failed", error);
+    setSyncStatus("Could not delete from the shared list.", "offline");
+  } finally {
+    endRemoteSync();
+  }
+}
+
 async function loadRemoteSnapshot() {
   const [bets, boardRows] = await Promise.all([
     fetchRemoteBets().catch(() => []),
@@ -629,6 +703,16 @@ async function upsertRemoteBet(bet) {
     method: "POST",
     prefer: "resolution=merge-duplicates,return=representation",
     body: payload,
+  });
+}
+
+async function deleteRemoteBet(betId) {
+  const url = buildTableUrl(remoteConfig.betsTable);
+  url.searchParams.set("id", `eq.${betId}`);
+
+  return requestSupabase(url, {
+    method: "DELETE",
+    prefer: "return=representation",
   });
 }
 

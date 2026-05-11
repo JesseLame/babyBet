@@ -343,7 +343,7 @@ textarea {
 
 .bets-table {
   width: 100%;
-  min-width: 680px;
+  min-width: 780px;
   border-collapse: collapse;
 }
 
@@ -390,6 +390,38 @@ textarea {
 
 .bet-muted-cell {
   color: var(--muted);
+}
+
+.bet-actions-cell {
+  width: 96px;
+  text-align: center;
+}
+
+button.secondary.row-action-button {
+  width: 2.15rem;
+  height: 2.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  flex: none;
+  color: #fffdf8;
+  border: 1px solid rgba(181, 72, 72, 0.28);
+  background: var(--danger);
+  box-shadow: 0 8px 18px rgba(181, 72, 72, 0.16);
+  padding: 0;
+  border-radius: 999px;
+}
+
+button.secondary.row-action-button:hover {
+  background: #9f3f3f;
+}
+
+.row-action-button svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  display: block;
+  fill: currentColor;
 }
 
 .empty-state-cell {
@@ -486,11 +518,13 @@ textarea {
   }
 
   .bets-table tbody tr {
+    position: relative;
     display: grid;
     border: 1px solid rgba(31, 41, 51, 0.08);
     border-radius: 18px;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 244, 235, 0.96));
     overflow: hidden;
+    padding-top: 32px;
   }
 
   .bets-table tbody tr.is-leader {
@@ -526,6 +560,31 @@ textarea {
 
   .bet-muted-cell {
     color: var(--text);
+  }
+
+  .bet-actions-cell {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1;
+    padding: 0;
+    border-bottom: 0;
+    white-space: normal;
+    width: auto;
+  }
+
+  .bet-actions-cell::before {
+    content: none;
+  }
+
+  .bets-table tbody .row-action-button {
+    width: 2.05rem;
+    height: 2.05rem;
+  }
+
+  .bets-table tbody .row-action-button svg {
+    width: 0.95rem;
+    height: 0.95rem;
   }
 
   .empty-state-cell {
@@ -583,6 +642,11 @@ textarea {
   button.secondary,
   button:not(.secondary) {
     width: 100%;
+  }
+
+  .bets-table tbody .row-action-button {
+    width: 2rem;
+    height: 2rem;
   }
 
   .board-tools {
