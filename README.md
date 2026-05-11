@@ -1,13 +1,13 @@
 # Baby Bet Board
 
-A simple static website for tracking a bet on a child's birth date and name.
+A simple static website for tracking a compact list of bets on a child's birth date and name.
 
 ## What it does
 
-- Tracks a predicted birth date and predicted name
-- Lets you log the actual birth date and actual name later
+- Tracks a list of bets with predicted date, predicted name, stake, and notes
+- Keeps the layout compact with a small create button and list-first view
 - Caches everything in the browser with `localStorage`
-- Can sync the same board across browsers when Supabase is configured
+- Can sync the same list across browsers when Supabase is configured
 - Works as a free GitHub Pages site with no backend required for local use
 
 ## Shared storage
@@ -23,6 +23,7 @@ To share the same data across devices, connect the page to Supabase:
 
 The board key is the shared secret for that invite link. Anyone with the link can use the board, so keep it private.
 The Supabase publishable key is safe to expose to the browser, but it should still be stored as a GitHub secret so it does not live in the repository. Never use a `service_role` or `sb_secret` key in this app.
+The first time the new list view sees an old single-board row, it copies that record into the new `baby_bet_bets` table so existing boards do not start empty.
 
 ## GitHub Pages deploy
 
@@ -49,4 +50,4 @@ If Supabase is not configured, the app stays in local-only mode and still works 
 ## Notes
 
 - The design is intentionally lightweight so it stays easy to maintain.
-- If you want, the next upgrade can add login-based access control, a results table, or a nicer share card.
+- If you want, the next upgrade can add login-based access control, row editing, or a nicer share card.

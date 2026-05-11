@@ -3,11 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Baby Bet Board</title>
+    <title>Baby Bet List</title>
     <meta
       name="description"
-      content="A simple, beautiful tracker for your bet on a child's birth date and name."
+      content="A compact light-theme list for tracking every baby bet in one place."
     />
+    <meta name="theme-color" content="#f5f1e8" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -26,147 +27,78 @@
     </div>
 
     <main class="shell">
-      <section class="hero card">
-        <div class="hero-copy">
+      <section class="board card">
+        <div class="board-copy">
           <p class="eyebrow">Private baby bet tracker</p>
-          <h1>Keep one clean record of the birth day and name wager.</h1>
+          <h1>All bets in one compact list.</h1>
           <p class="lede">
-            Track your guess, compare it against the actual arrival, and keep
-            every note optionally synced through a tiny shared backend while
-            the site stays free to host on GitHub Pages.
+            A light, easy board for recording each bet, keeping the list tidy,
+            and syncing the same view when Supabase is connected.
           </p>
         </div>
 
-        <div class="hero-panel">
-          <div class="status-pill" id="statusPill">Waiting for your predictions</div>
-          <div class="big-number" id="countdownValue">--</div>
-          <p class="muted" id="countdownLabel">Set a predicted date to start the countdown.</p>
-          <p class="sync-status" id="syncStatus">Open an invite link to join the shared board.</p>
+        <div class="board-tools">
+          <span class="count-pill" id="betsCount">0 bets</span>
+          <button class="create-button" id="toggleCreate" type="button" aria-expanded="false">
+            Create
+          </button>
         </div>
-      </section>
 
-      <section class="stats">
-        <article class="card stat-card">
-          <span class="stat-label">Predicted date</span>
-          <strong id="predictedDateStat">Not set</strong>
-        </article>
-        <article class="card stat-card">
-          <span class="stat-label">Predicted name</span>
-          <strong id="predictedNameStat">Not set</strong>
-        </article>
-        <article class="card stat-card">
-          <span class="stat-label">Outcome</span>
-          <strong id="resultStat">Waiting on arrival</strong>
-        </article>
-      </section>
-
-      <section class="content-grid">
-        <article class="card form-card">
-          <div class="section-heading">
-            <p class="eyebrow">The bet</p>
-            <h2>Your prediction</h2>
-          </div>
-
-          <div class="form-grid">
-            <label>
-              <span>Predicted birth date</span>
-              <input id="predictedDate" type="date" />
-            </label>
-            <label>
-              <span>Predicted name</span>
-              <input id="predictedName" type="text" placeholder="Enter the name you are betting on" />
-            </label>
-            <label class="full-width">
-              <span>Why this bet?</span>
-              <textarea
-                id="predictionNote"
-                rows="4"
-                placeholder="Write down the reason, odds, or anything you want to remember."
-              ></textarea>
-            </label>
-            <label class="full-width">
-              <span>Wager or stake</span>
-              <input id="stake" type="text" placeholder="Coffee, dinner, bragging rights..." />
-            </label>
-          </div>
-        </article>
-
-        <article class="card form-card">
-          <div class="section-heading">
-            <p class="eyebrow">Outcome</p>
-            <h2>Reality check</h2>
-          </div>
-
-          <div class="form-grid">
-            <label>
-              <span>Actual birth date</span>
-              <input id="actualDate" type="date" />
-            </label>
-            <label>
-              <span>Actual name</span>
-              <input id="actualName" type="text" placeholder="Enter the final name" />
-            </label>
-            <label class="full-width">
-              <span>Result notes</span>
-              <textarea
-                id="resultNote"
-                rows="4"
-                placeholder="Add the final story, timing details, or who won the bet."
-              ></textarea>
-            </label>
-          </div>
-
-          <div class="action-row">
-            <button class="secondary" id="seedSample" type="button">Load sample</button>
-            <button id="markArrived" type="button">Mark arrival</button>
-          </div>
-        </article>
-      </section>
-
-      <section class="content-grid bottom-grid">
-        <article class="card">
-          <div class="section-heading">
-            <p class="eyebrow">Summary</p>
-            <h2>Bet status</h2>
-          </div>
-
-          <dl class="summary-list">
-            <div>
-              <dt>Date match</dt>
-              <dd id="dateMatch">No actual date yet</dd>
-            </div>
-            <div>
-              <dt>Name match</dt>
-              <dd id="nameMatch">No actual name yet</dd>
-            </div>
-            <div>
-              <dt>Days off</dt>
-              <dd id="daysOff">--</dd>
-            </div>
-          </dl>
-        </article>
-
-        <article class="card">
-          <div class="section-heading">
-            <p class="eyebrow">Timeline</p>
-            <h2>Private notes</h2>
-          </div>
-
-          <div class="notes-form">
-            <input id="noteInput" type="text" placeholder="Add a quick note or update" />
-            <button id="addNote" type="button">Add</button>
-          </div>
-
-          <ul class="timeline" id="timeline"></ul>
-        </article>
-      </section>
-
-      <section class="card footer-card">
-        <p>
-          Everything is cached in your browser, and when Supabase is configured the same board is
-          shared across the invite link. Perfect for a free GitHub Pages site.
+        <p class="sync-status" id="syncStatus" role="status" aria-live="polite">
+          Open an invite link to join the shared list.
         </p>
-        <button class="ghost" id="copySummary" type="button">Copy summary</button>
+      </section>
+
+      <section class="card create-panel" id="createPanel" hidden>
+        <div class="section-heading compact">
+          <p class="eyebrow">Create</p>
+          <h2>New bet</h2>
+        </div>
+
+        <form class="create-form" id="createForm">
+          <label>
+            <span>Predicted name</span>
+            <input
+              id="predictedName"
+              type="text"
+              placeholder="Enter the name you are betting on"
+              required
+            />
+          </label>
+
+          <label>
+            <span>Predicted date</span>
+            <input id="predictedDate" type="date" />
+          </label>
+
+          <label>
+            <span>Stake</span>
+            <input id="stake" type="text" placeholder="Coffee, dinner, bragging rights..." />
+          </label>
+
+          <label class="full-width">
+            <span>Note</span>
+            <textarea
+              id="predictionNote"
+              rows="3"
+              placeholder="Keep the reason short and easy to scan."
+            ></textarea>
+          </label>
+
+          <div class="form-actions full-width">
+            <button class="secondary" id="cancelCreate" type="button">Cancel</button>
+            <button id="submitCreate" type="submit">Add bet</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card list-panel">
+        <div class="section-heading compact">
+          <p class="eyebrow">Bets</p>
+          <h2>All bets</h2>
+        </div>
+
+        <ul class="bets-list" id="betsList"></ul>
       </section>
     </main>
   </body>

@@ -2,6 +2,22 @@
 -- This project uses an invite-link board key as the shared secret.
 -- If you want stricter protection later, add RLS policies on top of this schema.
 
+create table if not exists public.baby_bet_bets (
+  id text primary key,
+  board_key text not null,
+  created_at timestamptz not null default now(),
+  predicted_date text not null default '',
+  predicted_name text not null default '',
+  prediction_note text not null default '',
+  stake text not null default '',
+  actual_date text not null default '',
+  actual_name text not null default '',
+  result_note text not null default ''
+);
+
+create index if not exists baby_bet_bets_board_key_created_at_idx
+  on public.baby_bet_bets (board_key, created_at desc);
+
 create table if not exists public.baby_bet_board (
   board_key text primary key,
   predicted_date text not null default '',
