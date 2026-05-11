@@ -1,5 +1,6 @@
 -- Baby Bet Board schema for Supabase
--- This project uses an invite-link board key as the shared secret.
+-- This project now uses a single shared list. The `board_key` columns remain
+-- for compatibility with existing data and older rows.
 -- If you want stricter protection later, add RLS policies on top of this schema.
 
 create table if not exists public.baby_bet_bets (

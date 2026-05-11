@@ -1,10 +1,10 @@
 const APP_KEY = "baby-bet-board";
 const APP_VERSION = "v3";
 const LEGACY_APP_VERSION = "v2";
-const BOARD_KEY_MEMORY_KEY = `${APP_KEY}:${APP_VERSION}:last-board-key`;
 const REMOTE_POLL_MS = 15000;
 const SAVE_DEBOUNCE_MS = 650;
 const env = import.meta.env ?? {};
+const SHARED_REMOTE_SCOPE = "";
 
 const appConfig = normalizeConfig(
   {
@@ -12,20 +12,17 @@ const appConfig = normalizeConfig(
     supabasePublishableKey: env.VITE_SUPABASE_PUBLISHABLE_KEY,
     boardTable: "baby_bet_board",
     betsTable: "baby_bet_bets",
-    boardKey: env.VITE_BOARD_KEY,
   }
 );
-const boardKey = readBoardKey(appConfig.boardKey);
-const storageKey = `${APP_KEY}:${APP_VERSION}:${boardKey || "local"}`;
-const legacyStorageKey = `${APP_KEY}:${LEGACY_APP_VERSION}:${boardKey || "local"}`;
+const storageKey = `${APP_KEY}:${APP_VERSION}`;
+const legacyStorageKey = `${APP_KEY}:${LEGACY_APP_VERSION}`;
 const remoteConfig =
-  boardKey && appConfig.supabaseUrl && appConfig.supabasePublishableKey
+  appConfig.supabaseUrl && appConfig.supabasePublishableKey
     ? {
         supabaseUrl: appConfig.supabaseUrl,
         supabasePublishableKey: appConfig.supabasePublishableKey,
         boardTable: appConfig.boardTable,
         betsTable: appConfig.betsTable,
-        boardKey,
       }
     : null;
 
@@ -66,7 +63,6 @@ function bootstrap() {
   if (remoteConfig) {
     setSyncStatus("Connecting to shared list...", "connecting");
     console.info("[Baby Bets] remote sync enabled", {
-      boardKeyPresent: Boolean(boardKey),
       supabaseUrlPresent: Boolean(appConfig.supabaseUrl),
       supabasePublishableKeyPresent: Boolean(appConfig.supabasePublishableKey),
       boardTable: remoteConfig.boardTable,
@@ -180,10 +176,7 @@ function setInitialStatus() {
     return;
   }
 
-  setSyncStatus(
-    boardKey ? "Create the first bet to start the shared list." : "Create the first bet to start the list.",
-    "local"
-  );
+  setSyncStatus("Create the first bet to start the list.", "local");
 }
 
 function render() {
@@ -285,6 +278,12 @@ function loadState() {
     return legacy;
   }
 
+  const migrated = readAnyNamespacedState(APP_VERSION) || readAnyNamespacedState(LEGACY_APP_VERSION);
+  if (migrated && migrated.bets.length > 0) {
+    safeSetItem(storageKey, JSON.stringify(migrated));
+    return migrated;
+  }
+
   return current || legacy || createDefaultState();
 }
 
@@ -342,7 +341,6 @@ function hasLegacyBetShape(source) {
     source.updated_at,
     source.createdAt,
     source.created_at,
-    source.board_key,
   ].some((value) => value !== undefined && value !== null && String(value).trim() !== "");
 }
 
@@ -521,7 +519,6 @@ async function syncBetNow(bet) {
     setSyncStatus("Saving bet...", "saving");
     console.info("[Baby Bets] upserting bet", {
       betId: bet.id,
-      boardKey: remoteConfig.boardKey,
       supabaseUrl: remoteConfig.supabaseUrl,
       table: remoteConfig.betsTable,
     });
@@ -551,7 +548,6 @@ async function loadRemoteSnapshot() {
 async function fetchRemoteBets() {
   const url = buildTableUrl(remoteConfig.betsTable);
   url.searchParams.set("select", "*");
-  url.searchParams.set("board_key", `eq.${remoteConfig.boardKey}`);
   url.searchParams.set("order", "created_at.desc");
 
   const rows = await requestSupabase(url);
@@ -561,7 +557,6 @@ async function fetchRemoteBets() {
 async function fetchLegacyBoardRow() {
   const url = buildTableUrl(remoteConfig.boardTable);
   url.searchParams.set("select", "*");
-  url.searchParams.set("board_key", `eq.${remoteConfig.boardKey}`);
   url.searchParams.set("limit", "1");
 
   const rows = await requestSupabase(url);
@@ -582,7 +577,7 @@ async function upsertRemoteBet(bet) {
 function betToRemotePayload(bet) {
   return {
     id: bet.id,
-    board_key: remoteConfig.boardKey,
+    board_key: SHARED_REMOTE_SCOPE,
     created_at: bet.createdAt,
     predicted_date: bet.predictedDate ?? "",
     predicted_name: bet.predictedName ?? "",
@@ -650,12 +645,10 @@ function getSyncDiagnostics() {
   const missing = [];
   const supabaseKeyKind = getSupabaseKeyKind(appConfig.supabasePublishableKey);
 
-  if (!boardKey) missing.push("BOARD_KEY");
   if (!appConfig.supabaseUrl) missing.push("SUPABASE_URL");
   if (!appConfig.supabasePublishableKey) missing.push("SUPABASE_PUBLISHABLE_KEY");
 
   return {
-    boardKeyPresent: Boolean(boardKey),
     supabaseUrlPresent: Boolean(appConfig.supabaseUrl),
     supabasePublishableKeyPresent: Boolean(appConfig.supabasePublishableKey),
     supabaseKeyKind,
@@ -693,7 +686,7 @@ function generateBetId() {
 }
 
 function legacyBetId() {
-  return `legacy-${boardKey || "local"}`;
+  return `legacy-${APP_KEY}`;
 }
 
 function normalizeConfig(raw) {
@@ -703,36 +696,28 @@ function normalizeConfig(raw) {
     supabasePublishableKey: toText(source.supabasePublishableKey).trim(),
     boardTable: toText(source.boardTable).trim() || "baby_bet_board",
     betsTable: toText(source.betsTable).trim() || "baby_bet_bets",
-    boardKey: toText(source.boardKey).trim(),
   };
 }
 
-function readBoardKey(defaultKey = "") {
+function readAnyNamespacedState(version) {
+  const prefix = `${APP_KEY}:${version}:`;
+
   try {
-    const fromUrl = readBoardKeyFromUrl();
-    if (fromUrl) {
-      safeSetItem(BOARD_KEY_MEMORY_KEY, fromUrl);
-      return fromUrl;
-    }
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index);
+      if (!key || !key.startsWith(prefix)) continue;
+      if (key === storageKey || key === legacyStorageKey) continue;
 
-    const remembered = safeGetItem(BOARD_KEY_MEMORY_KEY);
-    if (remembered) return remembered;
-
-    if (defaultKey) {
-      safeSetItem(BOARD_KEY_MEMORY_KEY, defaultKey);
-      return defaultKey;
+      const state = readStateFromKey(key);
+      if (state && state.bets.length > 0) {
+        return state;
+      }
     }
   } catch {
-    return defaultKey;
+    return null;
   }
 
-  return defaultKey;
-}
-
-function readBoardKeyFromUrl() {
-  const query = new URLSearchParams(window.location.search);
-  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-  return hash.get("board") || query.get("board") || "";
+  return null;
 }
 
 function safeGetItem(key) {

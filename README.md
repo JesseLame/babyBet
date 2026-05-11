@@ -19,13 +19,11 @@ To share the same data across devices, connect the app to Supabase:
 3. Add the following Vercel environment variables:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
-   - `VITE_BOARD_KEY`
 4. Deploy the app on Vercel. The build step injects those values at build time.
-5. Share the deployed URL directly. The app reads the board key from build-time env, so you do not need to append `#board=...`.
+5. Share the deployed URL directly. The app uses one shared list for the site.
 
-The board key is the shared secret for the site. Anyone who can load the deployed page can use the board, so keep it private.
 The Supabase publishable key is safe to expose to the browser, but it should still be stored as a Vercel environment variable so it does not live in the repository. Never use a `service_role` or `sb_secret` key in this app.
-The first time the new list view sees an old single-board row, it copies that record into the new `baby_bet_bets` table so existing boards do not start empty.
+The schema keeps the old `board_key` column for compatibility with existing data, but the app no longer asks you to manage any board secret.
 
 ## Local development
 
@@ -36,7 +34,7 @@ npm install
 npm run dev
 ```
 
-If you want local Supabase sync while developing, create a `.env.local` file from [`.env.example`](.env.example) and fill in the three `VITE_*` values.
+If you want local Supabase sync while developing, create a `.env.local` file from [`.env.example`](.env.example) and fill in the two `VITE_*` values.
 
 You can also run a production build locally with:
 
@@ -49,7 +47,7 @@ If Supabase is not configured, the app stays in local-only mode and still works 
 ## Deploy on Vercel
 
 1. Import the repository into Vercel.
-2. Set the three `VITE_*` environment variables in the Vercel project settings.
+2. Set the two `VITE_*` environment variables in the Vercel project settings.
 3. Let Vercel use the default Vite build command and output directory.
 4. Deploy the project.
 
