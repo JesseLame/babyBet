@@ -4,11 +4,16 @@ const LEGACY_APP_VERSION = "v2";
 const BOARD_KEY_MEMORY_KEY = `${APP_KEY}:${APP_VERSION}:last-board-key`;
 const REMOTE_POLL_MS = 15000;
 const SAVE_DEBOUNCE_MS = 650;
+const env = import.meta.env ?? {};
 
 const appConfig = normalizeConfig(
-  typeof window.BABY_BET_CONFIG === "object" && window.BABY_BET_CONFIG
-    ? window.BABY_BET_CONFIG
-    : {}
+  {
+    supabaseUrl: env.VITE_SUPABASE_URL,
+    supabasePublishableKey: env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    boardTable: "baby_bet_board",
+    betsTable: "baby_bet_bets",
+    boardKey: env.VITE_BOARD_KEY,
+  }
 );
 const boardKey = readBoardKey(appConfig.boardKey);
 const storageKey = `${APP_KEY}:${APP_VERSION}:${boardKey || "local"}`;
