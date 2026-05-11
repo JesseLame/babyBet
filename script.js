@@ -590,14 +590,29 @@ function betToRemotePayload(bet) {
 }
 
 async function requestSupabase(url, { method = "GET", body, prefer } = {}) {
+  const supabaseKey = remoteConfig.supabasePublishableKey;
+  const supabaseKeyKind = getSupabaseKeyKind(supabaseKey);
+
+  if (supabaseKeyKind === "secret") {
+    throw new Error(
+      "Supabase secret keys cannot be used in the browser. Use a publishable key instead."
+    );
+  }
+
+  const headers = {
+    apikey: supabaseKey,
+    Accept: "application/json",
+    ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+    ...(prefer ? { Prefer: prefer } : {}),
+  };
+
+  if (supabaseKeyKind === "legacy_jwt") {
+    headers.Authorization = `Bearer ${supabaseKey}`;
+  }
+
   const response = await fetch(url, {
     method,
-    headers: {
-      apikey: remoteConfig.supabasePublishableKey,
-      Accept: "application/json",
-      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
-      ...(prefer ? { Prefer: prefer } : {}),
-    },
+    headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
@@ -628,6 +643,7 @@ function setSyncStatus(message, tone = "local") {
 
 function getSyncDiagnostics() {
   const missing = [];
+  const supabaseKeyKind = getSupabaseKeyKind(appConfig.supabasePublishableKey);
 
   if (!boardKey) missing.push("BOARD_KEY");
   if (!appConfig.supabaseUrl) missing.push("SUPABASE_URL");
@@ -637,6 +653,7 @@ function getSyncDiagnostics() {
     boardKeyPresent: Boolean(boardKey),
     supabaseUrlPresent: Boolean(appConfig.supabaseUrl),
     supabasePublishableKeyPresent: Boolean(appConfig.supabasePublishableKey),
+    supabaseKeyKind,
     remoteEnabled: Boolean(remoteConfig),
     missing,
     reason:
@@ -732,6 +749,14 @@ function safeSetItem(key, value) {
 function toText(value) {
   if (value === null || value === undefined) return "";
   return typeof value === "string" ? value : String(value);
+}
+
+function getSupabaseKeyKind(key) {
+  if (!key) return "missing";
+  if (key.startsWith("sb_publishable_")) return "publishable";
+  if (key.startsWith("sb_secret_")) return "secret";
+  if (/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(key)) return "legacy_jwt";
+  return "unknown";
 }
 
 function formatDate(value) {
