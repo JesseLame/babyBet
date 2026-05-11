@@ -606,7 +606,7 @@ async function requestSupabase(url, { method = "GET", body, prefer } = {}) {
     ...(prefer ? { Prefer: prefer } : {}),
   };
 
-  if (supabaseKeyKind === "legacy_jwt") {
+  if (supabaseKeyKind === "legacy_jwt" || supabaseKeyKind === "publishable") {
     headers.Authorization = `Bearer ${supabaseKey}`;
   }
 
