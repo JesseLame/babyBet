@@ -521,25 +521,18 @@ async function hydrateFromBackend() {
   try {
     const snapshot = await loadRemoteSnapshot();
     const remoteBets = normalizeBets(snapshot.bets);
-    state.bets = mergeBets(state.bets, remoteBets);
+    state.bets = remoteBets;
     render();
 
     if (snapshot.board && remoteBets.length === 0) {
       const legacy = normalizeLegacyBet(snapshot.board);
       if (hasMeaningfulBetData(legacy)) {
-        state.bets = mergeBets(state.bets, [legacy]);
+        state.bets = [legacy];
         render();
-        await seedRemoteBetsFromLocal([legacy]);
+        await upsertRemoteBet(legacy);
         setSyncStatus("Legacy board migrated into the list.", "synced");
         return;
       }
-    }
-
-    const localOnly = findLocalOnlyBets(state.bets, remoteBets);
-    if (localOnly.length > 0) {
-      await seedRemoteBetsFromLocal(localOnly);
-      setSyncStatus("Shared list synced", "synced");
-      return;
     }
 
     setSyncStatus(remoteBets.length > 0 ? "Shared list synced" : "Shared list ready", "synced");
@@ -559,48 +552,11 @@ async function refreshFromBackend() {
   try {
     const snapshot = await loadRemoteSnapshot();
     const remoteBets = normalizeBets(snapshot.bets);
-    state.bets = mergeBets(state.bets, remoteBets);
+    state.bets = remoteBets;
     render();
-
-    const localOnly = findLocalOnlyBets(state.bets, remoteBets);
-    if (localOnly.length > 0) {
-      await seedRemoteBetsFromLocal(localOnly);
-      setSyncStatus("Shared list synced", "synced");
-    }
+    setSyncStatus(remoteBets.length > 0 ? "Shared list synced" : "Shared list ready", "synced");
   } catch {
     setSyncStatus("Shared list unavailable right now.", "offline");
-  } finally {
-    endRemoteSync();
-  }
-}
-
-function mergeBets(primary, secondary) {
-  const combined = new Map();
-
-  for (const bet of normalizeBets(primary)) {
-    combined.set(bet.id, bet);
-  }
-
-  for (const bet of normalizeBets(secondary)) {
-    combined.set(bet.id, bet);
-  }
-
-  return [...combined.values()].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-}
-
-function findLocalOnlyBets(localBets, remoteBets) {
-  const remoteIds = new Set(normalizeBets(remoteBets).map((bet) => bet.id));
-  return normalizeBets(localBets).filter((bet) => !remoteIds.has(bet.id));
-}
-
-async function seedRemoteBetsFromLocal(bets) {
-  if (!remoteConfig || !Array.isArray(bets) || bets.length === 0) return;
-
-  beginRemoteSync();
-  try {
-    for (const bet of bets) {
-      await upsertRemoteBet(bet);
-    }
   } finally {
     endRemoteSync();
   }

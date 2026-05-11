@@ -21,6 +21,8 @@ To share the same data across devices, connect the app to Supabase:
 4. Deploy the app on Vercel. The build step injects those values at build time.
 5. Share the deployed URL directly. The app uses one shared list for the site.
 
+Supabase is treated as the source of truth. If you edit or delete a row in Supabase, the app will mirror that change on the next refresh instead of restoring stale client-side data.
+
 The Supabase publishable key is safe to expose to the browser, but it should still be stored as a Vercel environment variable so it does not live in the repository. Never use a `service_role` or `sb_secret` key in this app.
 The schema keeps the old `board_key` column for compatibility with existing data, but the app no longer asks you to manage any board secret.
 
