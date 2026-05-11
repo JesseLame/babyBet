@@ -88,8 +88,17 @@ function bindActions() {
 function handleCreateSubmit() {
   const predictedName = els.predictedName.value.trim();
   const predictedDate = els.predictedDate.value;
-  const guessedBy = els.guessedBy.value.trim();
-  const guessTime = els.guessTime.value;
+  const guessedByField = getCreateField("guessedBy", "stake");
+  const guessTimeField = getCreateField("guessTime", "predictionNote");
+
+  if (!guessedByField || !guessTimeField) {
+    console.warn("Baby Bets form fields are missing. Please refresh the page and try again.");
+    setSyncStatus("Form fields are missing. Please refresh the page and try again.", "error");
+    return;
+  }
+
+  const guessedBy = guessedByField.value.trim();
+  const guessTime = guessTimeField.value.trim();
 
   if (!predictedName) {
     els.predictedName.focus();
@@ -97,12 +106,12 @@ function handleCreateSubmit() {
   }
 
   if (!guessedBy) {
-    els.guessedBy.focus();
+    guessedByField.focus();
     return;
   }
 
   if (!guessTime) {
-    els.guessTime.focus();
+    guessTimeField.focus();
     return;
   }
 
@@ -122,6 +131,15 @@ function handleCreateSubmit() {
   els.createForm.reset();
   toggleCreatePanel(false);
   void syncBetNow(bet);
+}
+
+function getCreateField(...candidateIds) {
+  for (const candidateId of candidateIds) {
+    const field = document.getElementById(candidateId);
+    if (field) return field;
+  }
+
+  return null;
 }
 
 function toggleCreatePanel(forceOpen) {
