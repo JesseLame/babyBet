@@ -29,11 +29,12 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          BOARD_KEY: ${{ secrets.BOARD_KEY }}
         run: |
           rm -rf dist
           mkdir -p dist
           cp index.html script.js styles.css config.js dist/
-          node -e "const fs=require('fs'); const path=require('path'); const config={supabaseUrl: process.env.SUPABASE_URL || '', supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY || '', boardTable: 'baby_bet_board', betsTable: 'baby_bet_bets', boardKey: ''}; fs.writeFileSync(path.join('dist','config.js'), 'window.BABY_BET_CONFIG = ' + JSON.stringify(config, null, 2) + ';\n');"
+          node -e "const fs=require('fs'); const path=require('path'); const config={supabaseUrl: process.env.SUPABASE_URL || '', supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY || '', boardTable: 'baby_bet_board', betsTable: 'baby_bet_bets', boardKey: process.env.BOARD_KEY || ''}; fs.writeFileSync(path.join('dist','config.js'), 'window.BABY_BET_CONFIG = ' + JSON.stringify(config, null, 2) + ';\n');"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

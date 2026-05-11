@@ -28,13 +28,21 @@
 
     <main class="shell">
       <section class="board card">
-        <h1>Baby Bets</h1>
+        <div class="board-copy">
+          <p class="eyebrow">Private baby bet tracker</p>
+          <h1>Baby Bets</h1>
+        </div>
 
         <div class="board-tools">
+          <span class="count-pill" id="betsCount">0 bets</span>
           <button class="create-button" id="toggleCreate" type="button" aria-expanded="false">
             Create
           </button>
         </div>
+
+        <p class="sync-status" id="syncStatus" role="status" aria-live="polite">
+          Open an invite link to join the shared list.
+        </p>
       </section>
 
       <section class="card create-panel" id="createPanel" hidden>
@@ -63,8 +71,8 @@
           <label>
             <span>Guessed by</span>
             <input
-              id="guessedBy"
-              name="guessedBy"
+              id="stake"
+              name="stake"
               type="text"
               placeholder="Enter the person who made the guess"
               required
@@ -73,7 +81,7 @@
 
           <label>
             <span>Time</span>
-            <input id="guessTime" name="guessTime" type="time" required />
+            <input id="predictionNote" name="predictionNote" type="time" required />
           </label>
 
           <div class="form-actions full-width">

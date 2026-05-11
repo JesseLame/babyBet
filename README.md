@@ -16,12 +16,12 @@ To share the same data across devices, connect the page to Supabase:
 
 1. Create a Supabase project.
 2. Run the schema in [`supabase-schema.sql`](supabase-schema.sql).
-3. In GitHub, add repository secrets named `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`.
+3. In GitHub, add repository secrets named `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `BOARD_KEY`.
 4. In repository settings, switch GitHub Pages to deploy from GitHub Actions.
 5. Push to the `main` branch and let the workflow generate `config.js` during deployment.
-6. Share an invite link that includes a board key, for example `https://your-site.github.io/#board=your-private-board-key`.
+6. Share the Pages URL directly. The deployed site will read the board key from the generated config, so you do not need to append `#board=...`.
 
-The board key is the shared secret for that invite link. Anyone with the link can use the board, so keep it private.
+The board key is the shared secret for the site. Anyone who can load the deployed page can use the board, so keep it private.
 The Supabase publishable key is safe to expose to the browser, but it should still be stored as a GitHub secret so it does not live in the repository. Never use a `service_role` or `sb_secret` key in this app.
 The first time the new list view sees an old single-board row, it copies that record into the new `baby_bet_bets` table so existing boards do not start empty.
 
@@ -42,10 +42,12 @@ If Supabase is not configured, the app stays in local-only mode and still works 
 ## Publish on GitHub Pages
 
 1. Push the repo to GitHub.
-2. Add `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` as repository secrets.
+2. Add `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `BOARD_KEY` as repository secrets.
 3. In `Settings` -> `Pages`, set the source to `GitHub Actions`.
 4. Push to `main` or run the workflow manually.
 5. Open the Pages URL shown by GitHub once deployment finishes.
+
+GitHub Pages can publish from private repositories on GitHub Pro, Team, Enterprise Cloud, and Enterprise Server. On GitHub Free, private repositories cannot keep a Pages site published. If you want the site itself to be access-controlled, GitHub's private Pages visibility is only available for Enterprise Cloud organizations.
 
 ## Notes
 
