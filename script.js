@@ -366,7 +366,7 @@ function renderEmptyState() {
   tr.className = "empty-state-row";
 
   const td = document.createElement("td");
-  td.colSpan = 5;
+  td.colSpan = 4;
   td.className = "empty-state-cell";
 
   const wrap = document.createElement("div");
@@ -400,20 +400,21 @@ function renderBetRow(bet, isLeader = false) {
   }
 
   tr.append(
-    createCell(bet.predictedName || "Untitled bet", "bet-name-cell"),
-    createCell(formatDate(bet.predictedDate) || "—", "bet-muted-cell"),
-    createCell(bet.guessedBy || "—", "bet-muted-cell"),
-    createCell(bet.guessTime || "—", "bet-muted-cell")
+    createCell(bet.predictedName || "Untitled bet", "Baby name", "bet-name-cell"),
+    createCell(formatDate(bet.predictedDate) || "—", "Predicted date", "bet-muted-cell"),
+    createCell(bet.guessedBy || "—", "Guessed by", "bet-muted-cell"),
+    createCell(bet.guessTime || "—", "Time", "bet-muted-cell")
   );
 
   return tr;
 }
 
-function createCell(text, className) {
+function createCell(text, label, className) {
   const td = document.createElement("td");
   if (className) {
     td.className = className;
   }
+  td.dataset.label = label;
   td.textContent = text;
   return td;
 }

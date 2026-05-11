@@ -467,7 +467,75 @@ textarea {
   }
 
   .bets-table {
-    min-width: 640px;
+    min-width: 0;
+  }
+
+  .bets-table thead {
+    display: none;
+  }
+
+  .bets-table,
+  .bets-table tbody {
+    display: block;
+  }
+
+  .bets-table tbody {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .bets-table tbody tr {
+    display: grid;
+    border: 1px solid rgba(31, 41, 51, 0.08);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 244, 235, 0.96));
+    overflow: hidden;
+  }
+
+  .bets-table tbody tr.is-leader {
+    border-color: rgba(35, 72, 63, 0.16);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(237, 244, 239, 0.96));
+  }
+
+  .bets-table tbody td {
+    display: grid;
+    gap: 4px;
+    padding: 12px 14px;
+    border-bottom: 1px solid rgba(31, 41, 51, 0.06);
+    font-size: 0.94rem;
+  }
+
+  .bets-table tbody td::before {
+    content: attr(data-label);
+    color: var(--soft);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    line-height: 1.15;
+  }
+
+  .bets-table tbody td:last-child {
+    border-bottom: 0;
+  }
+
+  .bet-name-cell {
+    font-size: 1.02rem;
+    line-height: 1.35;
+  }
+
+  .bet-muted-cell {
+    color: var(--text);
+  }
+
+  .empty-state-cell {
+    padding: 0;
+    border-bottom: 0;
+    background: transparent;
+  }
+
+  .empty-state-cell::before {
+    content: none;
   }
 
   .form-actions {
@@ -502,8 +570,12 @@ textarea {
     font-size: 1.2rem;
   }
 
+  .empty-state {
+    padding: 16px;
+  }
+
   .bets-table thead th,
-  .bets-table tbody td {
+  .bets-table tbody td:not(.empty-state-cell) {
     padding: 12px 14px;
   }
 
