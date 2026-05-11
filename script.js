@@ -26,6 +26,7 @@ const state = createDefaultState();
 const runtime = {
   remoteSyncInFlight: 0,
   pollTimer: null,
+  liveTimer: null,
 };
 
 const els = {
@@ -40,6 +41,10 @@ const els = {
   guessedBy: document.getElementById("guessedBy"),
   guessTime: document.getElementById("guessTime"),
   betsList: document.getElementById("betsList"),
+  liveLeader: document.getElementById("liveLeader"),
+  winnerName: document.getElementById("winnerName"),
+  winnerMeta: document.getElementById("winnerMeta"),
+  winnerTimer: document.getElementById("winnerTimer"),
 };
 
 const debugInfo = getSyncDiagnostics();
@@ -68,6 +73,11 @@ function bootstrap() {
   } else {
     console.info("[Baby Bets] remote sync disabled", debugInfo.reason);
   }
+
+  renderLiveWinner();
+  runtime.liveTimer = window.setInterval(() => {
+    renderLiveWinner();
+  }, 1000);
 }
 
 function bindActions() {
@@ -171,6 +181,7 @@ function setInitialStatus() {
 
 function render() {
   renderHeader();
+  renderLiveWinner();
   renderBets();
 }
 
@@ -181,7 +192,8 @@ function renderHeader() {
 }
 
 function renderBets() {
-  const bets = [...state.bets].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const bets = [...state.bets].sort(compareBetsByPredictedDate);
+  const winnerId = findClosestBet(bets)?.id ?? null;
   els.betsList.innerHTML = "";
 
   if (bets.length === 0) {
@@ -190,8 +202,163 @@ function renderBets() {
   }
 
   for (const bet of bets) {
-    els.betsList.appendChild(renderBetRow(bet));
+    els.betsList.appendChild(renderBetRow(bet, bet.id === winnerId));
   }
+}
+
+function renderLiveWinner() {
+  if (!els.liveLeader || !els.winnerName || !els.winnerMeta || !els.winnerTimer) {
+    return;
+  }
+
+  const winner = findClosestBet(state.bets);
+
+  if (!winner) {
+    els.liveLeader.dataset.state = "empty";
+    els.winnerName.textContent = "No bets yet";
+    els.winnerMeta.textContent = "Add a bet to see who is closest to now.";
+    els.winnerTimer.textContent = "--:--:--";
+    return;
+  }
+
+  const targetTime = parseBetTargetDateTime(winner.predictedDate, winner.guessTime);
+  const now = Date.now();
+  const difference = targetTime ? targetTime.getTime() - now : 0;
+
+  els.liveLeader.dataset.state = "active";
+  els.winnerName.textContent = winner.predictedName || "Untitled bet";
+  els.winnerMeta.textContent = buildWinnerMeta(winner, targetTime);
+  els.winnerTimer.textContent = formatCountdown(difference);
+}
+
+function compareBetsByPredictedDate(a, b) {
+  const aDate = parseDate(a.predictedDate);
+  const bDate = parseDate(b.predictedDate);
+
+  if (aDate && bDate) {
+    const diff = aDate.getTime() - bDate.getTime();
+    if (diff !== 0) return diff;
+  } else if (aDate) {
+    return -1;
+  } else if (bDate) {
+    return 1;
+  }
+
+  const createdDiff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  if (createdDiff !== 0) return createdDiff;
+
+  return a.id.localeCompare(b.id);
+}
+
+function findClosestBet(bets, now = Date.now()) {
+  let winner = null;
+  let winnerDistance = Number.POSITIVE_INFINITY;
+  let winnerTarget = Number.POSITIVE_INFINITY;
+
+  for (const bet of Array.isArray(bets) ? bets : []) {
+    const targetTime = parseBetTargetDateTime(bet.predictedDate, bet.guessTime);
+    if (!targetTime) continue;
+
+    const target = targetTime.getTime();
+    const distance = Math.abs(target - now);
+
+    if (
+      distance < winnerDistance ||
+      (distance === winnerDistance && target < winnerTarget) ||
+      (distance === winnerDistance &&
+        target === winnerTarget &&
+        compareBetRecency(bet, winner) > 0)
+    ) {
+      winner = bet;
+      winnerDistance = distance;
+      winnerTarget = target;
+    }
+  }
+
+  return winner;
+}
+
+function compareBetRecency(a, b) {
+  if (!b) return 1;
+
+  const aCreated = new Date(a.createdAt).getTime();
+  const bCreated = new Date(b.createdAt).getTime();
+
+  if (aCreated !== bCreated) {
+    return aCreated - bCreated;
+  }
+
+  return a.id.localeCompare(b.id);
+}
+
+function buildWinnerMeta(bet, targetTime) {
+  const pieces = [];
+  const dateText = formatDateTime(targetTime);
+
+  if (dateText) {
+    pieces.push(dateText);
+  } else if (bet.predictedDate) {
+    pieces.push(formatDate(bet.predictedDate));
+  }
+
+  if (bet.guessedBy) {
+    pieces.push(`by ${bet.guessedBy}`);
+  }
+
+  return pieces.length > 0 ? pieces.join(" · ") : "Closest guess right now";
+}
+
+function parseBetTargetDateTime(predictedDate, guessTime) {
+  const dateText = toText(predictedDate).trim();
+  if (!dateText) return null;
+
+  const timeText = normalizeTimeString(guessTime);
+  const dateTime = new Date(`${dateText}T${timeText}`);
+  return Number.isNaN(dateTime.getTime()) ? null : dateTime;
+}
+
+function normalizeTimeString(value) {
+  const timeText = toText(value).trim();
+  if (!timeText) return "12:00:00";
+
+  if (/^\d{2}:\d{2}$/.test(timeText)) {
+    return `${timeText}:00`;
+  }
+
+  if (/^\d{2}:\d{2}:\d{2}$/.test(timeText)) {
+    return timeText;
+  }
+
+  return "12:00:00";
+}
+
+function formatCountdown(deltaMs) {
+  const sign = deltaMs < 0 ? "ago" : "away";
+  const totalSeconds = Math.max(0, Math.round(Math.abs(deltaMs) / 1000));
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const clock = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(
+    seconds
+  ).padStart(2, "0")}`;
+
+  return days > 0 ? `${days}d ${clock} ${sign}` : `${clock} ${sign}`;
+}
+
+function formatDateTime(value) {
+  if (!value) return "";
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function renderEmptyState() {
@@ -225,9 +392,12 @@ function renderEmptyState() {
   return tr;
 }
 
-function renderBetRow(bet) {
+function renderBetRow(bet, isLeader = false) {
   const tr = document.createElement("tr");
   tr.className = "bet-row";
+  if (isLeader) {
+    tr.classList.add("is-leader");
+  }
 
   tr.append(
     createCell(bet.predictedName || "Untitled bet", "bet-name-cell"),

@@ -158,6 +158,51 @@ h3 {
   justify-self: end;
 }
 
+.live-leader {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(35, 72, 63, 0.1);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 244, 235, 0.92)),
+    var(--card-solid);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.live-leader-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.live-leader h2 {
+  font-size: clamp(1.2rem, 2.5vw, 1.7rem);
+  max-width: none;
+}
+
+.live-leader-meta {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.live-leader-timer {
+  color: var(--accent);
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+
+.live-leader[data-state="empty"] {
+  border-style: dashed;
+  background: rgba(255, 255, 255, 0.8);
+}
+
 button {
   font: inherit;
   border: 0;
@@ -330,6 +375,14 @@ textarea {
   background: rgba(35, 72, 63, 0.025);
 }
 
+.bets-table tbody tr.is-leader td {
+  background: rgba(35, 72, 63, 0.045);
+}
+
+.bets-table tbody tr.is-leader .bet-name-cell {
+  color: var(--accent);
+}
+
 .bet-name-cell {
   font-weight: 800;
   color: var(--text);
@@ -408,6 +461,11 @@ textarea {
     justify-self: start;
   }
 
+  .live-leader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .bets-table {
     min-width: 640px;
   }
@@ -434,6 +492,14 @@ textarea {
 
   h1 {
     font-size: clamp(1.8rem, 9vw, 2.5rem);
+  }
+
+  .live-leader {
+    padding: 14px 15px;
+  }
+
+  .live-leader-timer {
+    font-size: 1.2rem;
   }
 
   .bets-table thead th,
