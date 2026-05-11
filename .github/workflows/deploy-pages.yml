@@ -33,23 +33,7 @@ jobs:
           rm -rf dist
           mkdir -p dist
           cp index.html script.js styles.css config.js dist/
-          node <<'NODE'
-const fs = require('fs');
-const path = require('path');
-
-const config = {
-  supabaseUrl: process.env.SUPABASE_URL || "",
-  supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY || "",
-  boardTable: "baby_bet_board",
-  notesTable: "baby_bet_notes",
-  boardKey: "",
-};
-
-fs.writeFileSync(
-  path.join("dist", "config.js"),
-  `window.BABY_BET_CONFIG = ${JSON.stringify(config, null, 2)};\n`
-);
-NODE
+          node -e "const fs=require('fs'); const path=require('path'); const config={supabaseUrl: process.env.SUPABASE_URL || '', supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY || '', boardTable: 'baby_bet_board', notesTable: 'baby_bet_notes', boardKey: ''}; fs.writeFileSync(path.join('dist','config.js'), 'window.BABY_BET_CONFIG = ' + JSON.stringify(config, null, 2) + ';\n');"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
