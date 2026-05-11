@@ -47,6 +47,10 @@ const els = {
   betsList: document.getElementById("betsList"),
 };
 
+const debugInfo = getSyncDiagnostics();
+window.BABY_BET_DEBUG = debugInfo;
+console.info("[Baby Bets] boot", debugInfo);
+
 bootstrap();
 
 function bootstrap() {
@@ -56,10 +60,19 @@ function bootstrap() {
 
   if (remoteConfig) {
     setSyncStatus("Connecting to shared list...", "connecting");
+    console.info("[Baby Bets] remote sync enabled", {
+      boardKeyPresent: Boolean(boardKey),
+      supabaseUrlPresent: Boolean(appConfig.supabaseUrl),
+      supabasePublishableKeyPresent: Boolean(appConfig.supabasePublishableKey),
+      boardTable: remoteConfig.boardTable,
+      betsTable: remoteConfig.betsTable,
+    });
     void hydrateFromBackend();
     runtime.pollTimer = window.setInterval(() => {
       void refreshFromBackend();
     }, REMOTE_POLL_MS);
+  } else {
+    console.info("[Baby Bets] remote sync disabled", debugInfo.reason);
   }
 }
 
@@ -418,7 +431,7 @@ async function hydrateFromBackend() {
 
     setSyncStatus(remoteBets.length > 0 ? "Shared list synced" : "Shared list ready", "synced");
   } catch (error) {
-    console.warn("Shared sync unavailable", error);
+    console.warn("Shared sync unavailable", error, debugInfo);
     setSyncStatus("Local list only for now.", "offline");
   } finally {
     endRemoteSync();
@@ -493,6 +506,7 @@ async function seedRemoteBetsFromLocal(bets) {
 
 async function syncBetNow(bet) {
   if (!remoteConfig) {
+    console.info("[Baby Bets] local-only save", debugInfo.reason);
     setSyncStatus("Saved locally on this device.", "synced");
     return;
   }
@@ -500,6 +514,12 @@ async function syncBetNow(bet) {
   beginRemoteSync();
   try {
     setSyncStatus("Saving bet...", "saving");
+    console.info("[Baby Bets] upserting bet", {
+      betId: bet.id,
+      boardKey: remoteConfig.boardKey,
+      supabaseUrl: remoteConfig.supabaseUrl,
+      table: remoteConfig.betsTable,
+    });
     await upsertRemoteBet(bet);
     runtime.lastRemoteSignature = "";
     setSyncStatus("Shared list synced", "synced");
@@ -605,6 +625,26 @@ function setSyncStatus(message, tone = "local") {
   if (!els.syncStatus) return;
   els.syncStatus.textContent = message;
   els.syncStatus.dataset.tone = tone;
+}
+
+function getSyncDiagnostics() {
+  const missing = [];
+
+  if (!boardKey) missing.push("BOARD_KEY");
+  if (!appConfig.supabaseUrl) missing.push("SUPABASE_URL");
+  if (!appConfig.supabasePublishableKey) missing.push("SUPABASE_PUBLISHABLE_KEY");
+
+  return {
+    boardKeyPresent: Boolean(boardKey),
+    supabaseUrlPresent: Boolean(appConfig.supabaseUrl),
+    supabasePublishableKeyPresent: Boolean(appConfig.supabasePublishableKey),
+    remoteEnabled: Boolean(remoteConfig),
+    missing,
+    reason:
+      missing.length > 0
+        ? `Missing ${missing.join(", ")}`
+        : "Remote sync is enabled",
+  };
 }
 
 function beginRemoteSync() {
