@@ -4,7 +4,7 @@ A simple static website for tracking a compact list of bets on a child's birth d
 
 ## What it does
 
-- Tracks a list of bets with predicted date, predicted name, stake, and notes
+- Tracks a list of bets with predicted date, predicted name, who made the guess, and time
 - Keeps the layout compact with a small create button and list-first view
 - Caches everything in the browser with `localStorage`
 - Can sync the same list across browsers when Supabase is configured

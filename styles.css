@@ -119,11 +119,6 @@ body::before {
   animation: rise 500ms ease both;
 }
 
-.board-copy {
-  display: grid;
-  gap: 10px;
-}
-
 .eyebrow {
   margin: 0;
   text-transform: uppercase;
@@ -144,7 +139,7 @@ h3 {
 h1 {
   font-size: clamp(2rem, 4.4vw, 3.6rem);
   line-height: 0.96;
-  max-width: 12ch;
+  max-width: 10ch;
 }
 
 h2 {
@@ -156,38 +151,11 @@ h3 {
   line-height: 1.15;
 }
 
-.lede {
-  max-width: 62ch;
-  margin: 0;
-  color: var(--muted);
-  line-height: 1.62;
-  font-size: 0.98rem;
-}
-
 .board-tools {
   display: flex;
   gap: 10px;
   align-items: center;
   justify-self: end;
-}
-
-.count-pill,
-.status-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  white-space: nowrap;
-}
-
-.count-pill {
-  padding: 0.5rem 0.8rem;
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-color: rgba(35, 72, 63, 0.12);
-  font-size: 0.84rem;
-  font-weight: 700;
 }
 
 button {
@@ -237,31 +205,6 @@ button.secondary {
   color: var(--text);
   border: 1px solid rgba(31, 41, 51, 0.1);
   font-weight: 700;
-}
-
-.sync-status {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.88rem;
-  line-height: 1.45;
-  grid-column: 1 / -1;
-  padding-top: 2px;
-}
-
-.sync-status[data-tone="connecting"] {
-  color: var(--accent);
-}
-
-.sync-status[data-tone="saving"] {
-  color: var(--warn);
-}
-
-.sync-status[data-tone="synced"] {
-  color: var(--success);
-}
-
-.sync-status[data-tone="offline"] {
-  color: var(--danger);
 }
 
 .create-panel {
@@ -345,89 +288,61 @@ textarea {
   margin-top: 14px;
 }
 
-.bets-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 12px;
-}
-
-.bet-card,
-.empty-state {
+.bets-table-wrap {
+  overflow-x: auto;
   border-radius: 18px;
   border: 1px solid rgba(31, 41, 51, 0.08);
   background: var(--card-solid);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-.bet-card {
+.bets-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+}
+
+.bets-table thead th {
   padding: 14px 16px;
-  display: grid;
-  gap: 10px;
-  animation: rise 420ms ease both;
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--soft);
+  background: rgba(245, 241, 232, 0.65);
+  border-bottom: 1px solid rgba(31, 41, 51, 0.08);
+  white-space: nowrap;
 }
 
-.bet-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.bet-title {
-  display: grid;
-  gap: 5px;
-}
-
-.bet-meta {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.9rem;
+.bets-table tbody td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(31, 41, 51, 0.06);
+  vertical-align: top;
+  font-size: 0.94rem;
   line-height: 1.45;
 }
 
-.bet-body {
-  display: grid;
-  gap: 7px;
+.bets-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
-.bet-note {
-  margin: 0;
-  color: var(--text);
-  line-height: 1.5;
+.bets-table tbody tr:hover td {
+  background: rgba(35, 72, 63, 0.025);
 }
 
-.bet-subtle {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-  line-height: 1.45;
-}
-
-.status-chip {
-  padding: 0.36rem 0.68rem;
-  font-size: 0.76rem;
+.bet-name-cell {
   font-weight: 800;
-  letter-spacing: 0.03em;
+  color: var(--text);
 }
 
-.status-chip[data-tone="pending"] {
-  background: rgba(150, 113, 59, 0.08);
-  color: var(--warn);
-  border-color: rgba(150, 113, 59, 0.14);
-}
-
-.status-chip[data-tone="done"] {
-  background: rgba(47, 122, 89, 0.08);
-  color: var(--success);
-  border-color: rgba(47, 122, 89, 0.14);
-}
-
-.status-chip[data-tone="idle"] {
-  background: rgba(97, 112, 127, 0.08);
+.bet-muted-cell {
   color: var(--muted);
-  border-color: rgba(97, 112, 127, 0.12);
+}
+
+.empty-state-cell {
+  padding: 0;
+  border-bottom: 0;
+  background: transparent;
 }
 
 .empty-state {
@@ -435,7 +350,10 @@ textarea {
   display: grid;
   gap: 10px;
   text-align: left;
-  border-style: dashed;
+  border: 1px dashed rgba(31, 41, 51, 0.08);
+  border-radius: 18px;
+  background: var(--card-solid);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .empty-title {
@@ -490,12 +408,8 @@ textarea {
     justify-self: start;
   }
 
-  .sync-status {
-    padding-top: 0;
-  }
-
-  .bet-head {
-    flex-direction: column;
+  .bets-table {
+    min-width: 640px;
   }
 
   .form-actions {
@@ -520,6 +434,11 @@ textarea {
 
   h1 {
     font-size: clamp(1.8rem, 9vw, 2.5rem);
+  }
+
+  .bets-table thead th,
+  .bets-table tbody td {
+    padding: 12px 14px;
   }
 
   .create-button,

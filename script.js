@@ -42,8 +42,8 @@ const els = {
   cancelCreate: document.getElementById("cancelCreate"),
   predictedName: document.getElementById("predictedName"),
   predictedDate: document.getElementById("predictedDate"),
-  stake: document.getElementById("stake"),
-  predictionNote: document.getElementById("predictionNote"),
+  guessedBy: document.getElementById("guessedBy"),
+  guessTime: document.getElementById("guessTime"),
   betsList: document.getElementById("betsList"),
 };
 
@@ -88,11 +88,21 @@ function bindActions() {
 function handleCreateSubmit() {
   const predictedName = els.predictedName.value.trim();
   const predictedDate = els.predictedDate.value;
-  const stake = els.stake.value.trim();
-  const predictionNote = els.predictionNote.value.trim();
+  const guessedBy = els.guessedBy.value.trim();
+  const guessTime = els.guessTime.value;
 
   if (!predictedName) {
     els.predictedName.focus();
+    return;
+  }
+
+  if (!guessedBy) {
+    els.guessedBy.focus();
+    return;
+  }
+
+  if (!guessTime) {
+    els.guessTime.focus();
     return;
   }
 
@@ -101,8 +111,8 @@ function handleCreateSubmit() {
     createdAt: new Date().toISOString(),
     predictedName,
     predictedDate,
-    stake,
-    predictionNote,
+    guessedBy,
+    guessTime,
   });
 
   state.bets = [bet, ...state.bets.filter((entry) => entry.id !== bet.id)];
@@ -147,6 +157,7 @@ function render() {
 }
 
 function renderHeader() {
+  if (!els.betsCount) return;
   const count = state.bets.length;
   els.betsCount.textContent = `${count} bet${count === 1 ? "" : "s"}`;
 }
@@ -161,13 +172,20 @@ function renderBets() {
   }
 
   for (const bet of bets) {
-    els.betsList.appendChild(renderBetCard(bet));
+    els.betsList.appendChild(renderBetRow(bet));
   }
 }
 
 function renderEmptyState() {
-  const li = document.createElement("li");
-  li.className = "empty-state";
+  const tr = document.createElement("tr");
+  tr.className = "empty-state-row";
+
+  const td = document.createElement("td");
+  td.colSpan = 5;
+  td.className = "empty-state-cell";
+
+  const wrap = document.createElement("div");
+  wrap.className = "empty-state";
 
   const title = document.createElement("p");
   title.className = "empty-title";
@@ -183,104 +201,34 @@ function renderEmptyState() {
   button.textContent = "Create a bet";
   button.dataset.action = "open-create";
 
-  li.append(title, copy, button);
-  return li;
+  wrap.append(title, copy, button);
+  td.append(wrap);
+  tr.append(td);
+  return tr;
 }
 
-function renderBetCard(bet) {
-  const li = document.createElement("li");
-  li.className = "bet-card";
+function renderBetRow(bet) {
+  const tr = document.createElement("tr");
+  tr.className = "bet-row";
 
-  const head = document.createElement("div");
-  head.className = "bet-head";
+  tr.append(
+    createCell(bet.predictedName || "Untitled bet", "bet-name-cell"),
+    createCell(formatDate(bet.predictedDate) || "—", "bet-muted-cell"),
+    createCell(bet.guessedBy || "—", "bet-muted-cell"),
+    createCell(bet.guessTime || "—", "bet-muted-cell"),
+    createCell(formatTimestamp(bet.createdAt) || "—", "bet-muted-cell")
+  );
 
-  const titleWrap = document.createElement("div");
-  titleWrap.className = "bet-title";
-
-  const title = document.createElement("h3");
-  title.textContent = bet.predictedName || "Untitled bet";
-
-  const meta = document.createElement("p");
-  meta.className = "bet-meta";
-  meta.textContent = buildMetaLine(bet);
-
-  titleWrap.append(title, meta);
-
-  const status = document.createElement("span");
-  const statusInfo = statusForBet(bet);
-  status.className = "status-chip";
-  status.dataset.tone = statusInfo.tone;
-  status.textContent = statusInfo.label;
-
-  head.append(titleWrap, status);
-
-  const body = document.createElement("div");
-  body.className = "bet-body";
-
-  if (bet.predictionNote) {
-    const note = document.createElement("p");
-    note.className = "bet-note";
-    note.textContent = bet.predictionNote;
-    body.append(note);
-  }
-
-  const outcome = buildOutcomeLine(bet);
-  if (outcome) {
-    const result = document.createElement("p");
-    result.className = "bet-subtle";
-    result.textContent = outcome;
-    body.append(result);
-  }
-
-  li.append(head, body);
-  return li;
+  return tr;
 }
 
-function buildMetaLine(bet) {
-  const pieces = [];
-  if (bet.predictedDate) {
-    pieces.push(`Predicted ${formatDate(bet.predictedDate) || bet.predictedDate}`);
+function createCell(text, className) {
+  const td = document.createElement("td");
+  if (className) {
+    td.className = className;
   }
-  if (bet.stake) {
-    pieces.push(`Stake ${bet.stake}`);
-  }
-  if (bet.createdAt) {
-    pieces.push(`Added ${formatTimestamp(bet.createdAt)}`);
-  }
-
-  return pieces.length > 0 ? pieces.join(" · ") : "Ready to scan at a glance";
-}
-
-function buildOutcomeLine(bet) {
-  const pieces = [];
-  if (bet.actualDate) {
-    pieces.push(formatDate(bet.actualDate) || bet.actualDate);
-  }
-  if (bet.actualName) {
-    pieces.push(bet.actualName);
-  }
-
-  if (pieces.length > 0) {
-    return `Outcome: ${pieces.join(" · ")}`;
-  }
-
-  if (bet.resultNote) {
-    return `Result note: ${bet.resultNote}`;
-  }
-
-  return "";
-}
-
-function statusForBet(bet) {
-  if (bet.actualDate || bet.actualName || bet.resultNote) {
-    return { label: "Recorded", tone: "done" };
-  }
-
-  if (bet.predictedName || bet.predictedDate || bet.stake || bet.predictionNote) {
-    return { label: "Pending", tone: "pending" };
-  }
-
-  return { label: "Idle", tone: "idle" };
+  td.textContent = text;
+  return td;
 }
 
 function createDefaultState() {
@@ -345,6 +293,10 @@ function hasLegacyBetShape(source) {
     source.predictionNote,
     source.prediction_note,
     source.stake,
+    source.guessedBy,
+    source.guessed_by,
+    source.guessTime,
+    source.guess_time,
     source.actualDate,
     source.actual_date,
     source.actualName,
@@ -380,8 +332,8 @@ function normalizeBetLike(raw, fallbackId = generateBetId()) {
       new Date().toISOString(),
     predictedDate: toText(row.predictedDate ?? row.predicted_date).trim(),
     predictedName: toText(row.predictedName ?? row.predicted_name).trim(),
-    predictionNote: toText(row.predictionNote ?? row.prediction_note).trim(),
-    stake: toText(row.stake).trim(),
+    guessedBy: toText(row.guessedBy ?? row.guessed_by).trim(),
+    guessTime: toText(row.guessTime ?? row.guess_time).trim(),
     actualDate: toText(row.actualDate ?? row.actual_date).trim(),
     actualName: toText(row.actualName ?? row.actual_name).trim(),
     resultNote: toText(row.resultNote ?? row.result_note).trim(),
@@ -396,8 +348,8 @@ function hasMeaningfulBetData(bet) {
   return [
     bet.predictedDate,
     bet.predictedName,
-    bet.predictionNote,
-    bet.stake,
+    bet.guessedBy,
+    bet.guessTime,
     bet.actualDate,
     bet.actualName,
     bet.resultNote,
@@ -555,10 +507,7 @@ async function loadRemoteSnapshot() {
 
 async function fetchRemoteBets() {
   const url = buildTableUrl(remoteConfig.betsTable);
-  url.searchParams.set(
-    "select",
-    "id,board_key,created_at,predicted_date,predicted_name,prediction_note,stake,actual_date,actual_name,result_note"
-  );
+  url.searchParams.set("select", "*");
   url.searchParams.set("board_key", `eq.${remoteConfig.boardKey}`);
   url.searchParams.set("order", "created_at.desc");
 
@@ -568,10 +517,7 @@ async function fetchRemoteBets() {
 
 async function fetchLegacyBoardRow() {
   const url = buildTableUrl(remoteConfig.boardTable);
-  url.searchParams.set(
-    "select",
-    "board_key,predicted_date,predicted_name,prediction_note,stake,actual_date,actual_name,result_note,updated_at"
-  );
+  url.searchParams.set("select", "*");
   url.searchParams.set("board_key", `eq.${remoteConfig.boardKey}`);
   url.searchParams.set("limit", "1");
 
@@ -597,8 +543,8 @@ function betToRemotePayload(bet) {
     created_at: bet.createdAt,
     predicted_date: bet.predictedDate ?? "",
     predicted_name: bet.predictedName ?? "",
-    prediction_note: bet.predictionNote ?? "",
-    stake: bet.stake ?? "",
+    guessed_by: bet.guessedBy ?? "",
+    guess_time: bet.guessTime ?? "",
     actual_date: bet.actualDate ?? "",
     actual_name: bet.actualName ?? "",
     result_note: bet.resultNote ?? "",
@@ -678,7 +624,6 @@ function normalizeConfig(raw) {
     supabasePublishableKey: toText(source.supabasePublishableKey).trim(),
     boardTable: toText(source.boardTable).trim() || "baby_bet_board",
     betsTable: toText(source.betsTable).trim() || "baby_bet_bets",
-    notesTable: toText(source.notesTable).trim() || "baby_bet_notes",
     boardKey: toText(source.boardKey).trim(),
   };
 }

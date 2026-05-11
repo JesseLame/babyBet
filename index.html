@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Baby Bet List</title>
+    <title>Baby Bets</title>
     <meta
       name="description"
       content="A compact light-theme list for tracking every baby bet in one place."
@@ -28,25 +28,13 @@
 
     <main class="shell">
       <section class="board card">
-        <div class="board-copy">
-          <p class="eyebrow">Private baby bet tracker</p>
-          <h1>All bets in one compact list.</h1>
-          <p class="lede">
-            A light, easy board for recording each bet, keeping the list tidy,
-            and syncing the same view when Supabase is connected.
-          </p>
-        </div>
+        <h1>Baby Bets</h1>
 
         <div class="board-tools">
-          <span class="count-pill" id="betsCount">0 bets</span>
           <button class="create-button" id="toggleCreate" type="button" aria-expanded="false">
             Create
           </button>
         </div>
-
-        <p class="sync-status" id="syncStatus" role="status" aria-live="polite">
-          Open an invite link to join the shared list.
-        </p>
       </section>
 
       <section class="card create-panel" id="createPanel" hidden>
@@ -72,17 +60,18 @@
           </label>
 
           <label>
-            <span>Stake</span>
-            <input id="stake" type="text" placeholder="Coffee, dinner, bragging rights..." />
+            <span>Guessed by</span>
+            <input
+              id="guessedBy"
+              type="text"
+              placeholder="Enter the person who made the guess"
+              required
+            />
           </label>
 
-          <label class="full-width">
-            <span>Note</span>
-            <textarea
-              id="predictionNote"
-              rows="3"
-              placeholder="Keep the reason short and easy to scan."
-            ></textarea>
+          <label>
+            <span>Time</span>
+            <input id="guessTime" type="time" required />
           </label>
 
           <div class="form-actions full-width">
@@ -98,7 +87,20 @@
           <h2>All bets</h2>
         </div>
 
-        <ul class="bets-list" id="betsList"></ul>
+        <div class="bets-table-wrap">
+          <table class="bets-table">
+            <thead>
+              <tr>
+                <th scope="col">Baby name</th>
+                <th scope="col">Predicted date</th>
+                <th scope="col">Guessed by</th>
+                <th scope="col">Time</th>
+                <th scope="col">Added</th>
+              </tr>
+            </thead>
+            <tbody id="betsList"></tbody>
+          </table>
+        </div>
       </section>
     </main>
   </body>
