@@ -594,7 +594,6 @@ async function requestSupabase(url, { method = "GET", body, prefer } = {}) {
     method,
     headers: {
       apikey: remoteConfig.supabasePublishableKey,
-      Authorization: `Bearer ${remoteConfig.supabasePublishableKey}`,
       Accept: "application/json",
       ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
       ...(prefer ? { Prefer: prefer } : {}),
