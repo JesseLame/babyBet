@@ -27,10 +27,7 @@
 
     <main class="shell">
       <section class="board card">
-        <div class="board-copy">
-          <p class="eyebrow">Private baby bet tracker</p>
-          <h1>Baby Bets</h1>
-        </div>
+        <h1>Baby Bets</h1>
 
         <div class="board-tools">
           <span class="count-pill" id="betsCount">0 bets</span>
@@ -38,10 +35,6 @@
             Create
           </button>
         </div>
-
-        <p class="sync-status" id="syncStatus" role="status" aria-live="polite">
-          Open an invite link to join the shared list.
-        </p>
       </section>
 
       <section class="card create-panel" id="createPanel" hidden>
@@ -52,7 +45,7 @@
 
         <form class="create-form" id="createForm">
           <label>
-            <span>Predicted name</span>
+            <span>Name</span>
             <input
               id="predictedName"
               name="predictedName"
@@ -104,7 +97,6 @@
                 <th scope="col">Predicted date</th>
                 <th scope="col">Guessed by</th>
                 <th scope="col">Time</th>
-                <th scope="col">Added</th>
               </tr>
             </thead>
             <tbody id="betsList"></tbody>

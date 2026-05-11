@@ -233,8 +233,7 @@ function renderBetRow(bet) {
     createCell(bet.predictedName || "Untitled bet", "bet-name-cell"),
     createCell(formatDate(bet.predictedDate) || "—", "bet-muted-cell"),
     createCell(bet.guessedBy || "—", "bet-muted-cell"),
-    createCell(bet.guessTime || "—", "bet-muted-cell"),
-    createCell(formatTimestamp(bet.createdAt) || "—", "bet-muted-cell")
+    createCell(bet.guessTime || "—", "bet-muted-cell")
   );
 
   return tr;
